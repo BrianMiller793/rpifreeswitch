@@ -1,9 +1,10 @@
 #!/bin/bash
 
-# FreeSWITCH for Raspberrian Lite
+# FreeSWITCH for Raspbian Lite
 
-set -x
-set -e
+# Debug messages and stop on error
+#set -x
+#set -e
 
 # git ls-remote --heads https://freeswitch.org/stash/scm/fs/freeswitch.git/ | grep '/v[0-9]'
 # branches from 'git branch -a'
@@ -173,12 +174,46 @@ BuildUsrLocal()
 
 ConfigureUsrLocal()
 {
+  pushd "$BUILDDIR/$BRANCH"
+
 #  TODO, part of security configuration below.
 #  # Make basic configuration changes to the installation, once.
 #  [ "$(stat -c %U /usr/local/freeswitch)" = freeswitch ] && return
 
+  # Use the minimal configuration
+  sudo rm -rf "$FSHOME/conf"
+  sudo make config-minimal
+
+  # Enable the User Directory
+  sudo sed -i -f - "$FSHOME/conf/freeswitch.xml" << SEDSCRIPT
+11a \\
+\\
+  <section name="directory" description="User Directory">\\
+    <X-PRE-PROCESS cmd="include" data="directory/*.xml"/>\\
+  </section>\\
+SEDSCRIPT
+
+  # Set default password and domain
+  sudo sed -i -f - "$FSHOME/conf/vars.xml" << SEDSCRIPT
+2a \\
+  <X-PRE-PROCESS cmd="set" data="default_password=1234"/>\\
+  <X-PRE-PROCESS cmd="set" data="domain=\$\${local_ip_v4}"/>\\
+  <X-PRE-PROCESS cmd="set" data="domain_name=\$\${domain}"/>\\
+SEDSCRIPT
+
+  # Copy default domain directory
+  sudo cp -R "$BUILDDIR/$BRANCH/conf/vanilla/directory" "$FSHOME/conf/directory"
+
+  # Set up a minimal dialplan
+  sudo cp \
+    "$BUILDDIR/$BRANCH/conf/vanilla/dialplan/default.xml" \
+    "$FSHOME/conf/dialplan/default.xml"
+  sudo sed -i -e '705,827d' -e '294,698d' -e '171,259d' -e '157,162d' \
+    -e '130,151d' -e '16,124d' -e '2,11d' \
+    "$FSHOME/conf/dialplan/default.xml"
+
   # Put the database into shared memory, essential for Pi.
-  sudo sed -i -e '/core-db-name/s/<!-- \(.*\) -->/\1/' \
+  sudo sed -i -e '/<settings>/a\    <param name="core-db-name" value="\/dev\/shm\/core.db"\/>' \
     "$FSHOME/conf/autoload_configs/switch.conf.xml"
 
   # There's a bug in the logging module, disable rollover, reduce messages.
@@ -187,7 +222,6 @@ ConfigureUsrLocal()
     -e '/map name="all"/s/value="[^"]*"/value="warning,err,crit,alert"/' \
     "$FSHOME/conf/autoload_configs/logfile.conf.xml"
 
-  sudo cp -R "./conf/minimal/*" "$FSHOME/conf"
 #  Use the following to automatically configure modules.conf for the
 #  available modules.
 #
@@ -205,7 +239,7 @@ ConfigureUsrLocal()
 #  done
 
 # The following is in progress for configuring the 'service XX start|stop'
-# for Raspberrian, and doing a little bit of security modifications.
+# for Raspbian, and doing a little bit of security modifications.
 #
 # sudo mkdir /usr/local/etc/init.d
 # sudo cp "$BUILDDIR/$BRANCH"/debian/freeswitch-sysvinit.freeswitch.init /usr/local/etc/init.d/freeswitch.sh
@@ -214,16 +248,18 @@ ConfigureUsrLocal()
 # sudo usermod -L freeswitch
 # sudo chmod +x /usr/local/etc/init.d/freeswitch.sh
 # sudo chown -R freeswitch:freeswitch /usr/local/freeswitch
+
+  popd
 }
 
 # Default:
-# Get prerequesite Debian packages
+# Get prerequisite Debian packages
 # Get source
 # Do not build *.deb packages
 # Build for /usr/local/freeswitch
 # Configure /usr/local/freeswitch
 
-if [ -z "$NOPREREQUESITES" ]     ; then GetPackages ; fi
+if [ -z "$NOPREREQUISITES" ]     ; then GetPackages ; fi
 if [ -z "$NOSOURCE" ]            ; then GetSource ; fi
 if [ -n "$BUILDDEBPACKAGES" ]    ; then BuildPackages ; fi
 if [ -z "$NOBUILDUSRLOCAL" ]     ; then BuildUsrLocal ; fi

@@ -1,7 +1,7 @@
-# FreeSWITCH for Raspberian Lite
+﻿# FreeSWITCH for Raspbian Lite
 
 The purpose of this project is to make an easy-to-install system for
-installing and configuring FreeSWITCH on Raspberian Lite.  This will build
+installing and configuring FreeSWITCH on Raspbian Lite.  This will build
 the minimal configuration for FreeSWITCH.
 
 This has been tested on Raspberry Pi 3, using a Samsung Evo Plus 32GB microSD
@@ -10,9 +10,9 @@ is less than 30 minutes.
 
 ## To use:
 
-Run pilitefs.sh, with no modules.conf in the directory.
+Run `pilitefs.sh`, with no modules.conf in the `~` directory.
 
-This will install prerequesite packages, get the source, build it, install it
+This will install prerequisite packages, get the source, build it, install it
 into `/usr/local/freeswitch`, and make a few optimizations for Raspberry Pi.
 
 ## To run:
@@ -21,7 +21,7 @@ into `/usr/local/freeswitch`, and make a few optimizations for Raspberry Pi.
     sudo ./bin/freeswitch
 
 (There is a section in pilitefs.sh for configuring FreeSWITCH scripts for use
-with Raspberian Lite and integrating it with services, but it's not done yet.)
+with Raspbian Lite and integrating it with services, but it's not done yet.)
 
 ## Environmental Variables
 
@@ -32,7 +32,7 @@ with Raspberian Lite and integrating it with services, but it's not done yet.)
 | `BUILDDIR` | Directory under BUILDHOME for FreeSWITCH. |
 | `FSHOME` | Installation directory, `/usr/local/freeswitch` |
 | `FREESWITCHGIT` | Git URI for FreeSWITCH |
-| `NOPREREQUESITES` | If set, do not install prerequesite packages. |
+| `NOPREREQUISITES` | If set, do not install prerequisite packages. |
 | `NOSOURCE` | If set, do not perform `git` operations. |
 | `BUILDDEBPACKAGES` | If set, build the Debian FreeSWITCH packages. |
 | `NOBUILDUSRLOCAL` | If set, do not create or install binaries. |
@@ -45,3 +45,9 @@ script will use the `conf/minimal/modules.conf` file for the minimal
 configuration, unless one is present.  The one included here is for
 building _all_ of the modules that can be built on the Raspberry Pi.
 Some of the modules apparently need tweaks, but most of them will compile.
+
+## Minimal Configuration
+
+The configuration uses the `conf/minimal` files as a starting point, and then
+copies and modifies files from `conf/vanilla` to give a working starting
+point to register endpoints and make calls between the extensions.
